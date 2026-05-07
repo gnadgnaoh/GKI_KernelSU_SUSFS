@@ -198,26 +198,9 @@ jobs:
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
           AOSP_MIRROR=https://android.googlesource.com
-          BRANCH=main-kernel
+          BRANCH=main-kernel-2026
           git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools
           git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg
-          
-      - name: Verify and fix toolchain permissions
-        run: |
-          # Nếu avbtool không tồn tại (cache miss hoặc corrupt), re-download
-          if [ ! -f "kernel-build-tools/linux-x86/bin/avbtool" ]; then
-            echo "⚠️ avbtool missing, re-downloading toolchain..."
-            rm -rf kernel-build-tools mkbootimg
-            AOSP_MIRROR=https://android.googlesource.com
-            BRANCH=main-kernel
-            git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools
-            git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg
-          fi
-          # Fix permissions bị mất khi restore từ cache
-          chmod +x kernel-build-tools/linux-x86/bin/avbtool
-          chmod +x mkbootimg/mkbootimg.py
-          chmod +x mkbootimg/unpack_bootimg.py
-          echo "✅ avbtool: $(kernel-build-tools/linux-x86/bin/avbtool version)"
           
       - name: Generate signing key
         run: |
