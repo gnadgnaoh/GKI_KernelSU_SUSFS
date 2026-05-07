@@ -1,4 +1,4 @@
-name: 内核构建 - Android 12 (5.10)
+name: Kernel Build - Android 12 (5.10)
 
 permissions:
   contents: write
@@ -8,44 +8,69 @@ on:
   workflow_dispatch:
     inputs:
       kernelsu_variant:
-        description: "KernelSU 变体"
+        description: "KernelSU variant"
         required: true
         type: choice
         options:
           - Official
-          #- Next
           - SukiSU
           - ReSukiSU
         default: ReSukiSU
       kernelsu_branch:
-        description: "KSU 分支"
+        description: "KSU branch"
         required: true
         type: choice
         options:
-          - Stable(标准)
-          - Dev(开发)
-          - Other(其他/指定)
-        default: Stable(标准)
+          - Stable
+          - Dev
+          - Other
+        default: Stable
       version:
-        description: "自定义版本名 (可选)"
+        description: "Custom version name (optional)"
         required: false
         type: string
       build_time:
-        description: "自定义构建时间 (可选，N或留空=当前UTC)"
+        description: "Custom build time (optional, N or empty = current UTC)"
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
-      use_kpm:
-        description: "KPM 功能（patched 尚不支持）"
+      use_zram:
+        description: "Enable ZRAM enhanced algorithm"
         required: true
-        type: choice
-        default: "disabled (关闭)"
-        options:
-          - "disabled (关闭)"
-          - "enabled (开启)"
-          - "patched (开启并修补，尚不支持)"
+        type: boolean
+        default: false
+      use_bbg:
+        description: "Enable BBG anti-brick protection"
+        required: true
+        type: boolean
+        default: false
+      use_kpm:
+        description: "Enable KPM feature"
+        required: true
+        type: boolean
+        default: false
+      use_rekernel:
+        description: "Enable Re-Kernel driver"
+        required: false
+        type: boolean
+        default: false
+      enable_bbrv3:
+        description: "Enable BBRv3 source patch and networking config"
+        required: false
+        type: boolean
+        default: false
+      bypass_module_check:
+        description: "Bypass module version check"
+        required: false
+        type: boolean
+        default: false
+      cancel_susfs:
+        description: "Disable SUSFS"
+        required: true
+        type: boolean
+        default: false
       droidspaces:
-        description: "Droidspaces 容器支持"
+        description: "Droidspaces container support"
         required: false
         type: choice
         options:
@@ -54,26 +79,6 @@ on:
           - "123"
           - "345"
         default: "off"
-      use_zram:
-        description: "启用 ZRAM 增强算法"
-        required: true
-        type: boolean
-        default: false
-      use_bbg:
-        description: "启用 BBG 防格机"
-        required: true
-        type: boolean
-        default: false
-      use_rekernel:
-        description: "启用 Re-Kernel 驱动"
-        required: false
-        type: boolean
-        default: false
-      cancel_susfs:
-        description: "禁用 SUSFS"
-        required: true
-        type: boolean
-        default: false
   workflow_call:
     inputs:
       kernelsu_variant:
@@ -97,8 +102,16 @@ on:
         type: boolean
       use_kpm:
         required: true
-        type: string
+        type: boolean
       use_rekernel:
+        required: false
+        type: boolean
+        default: false
+      enable_bbrv3:
+        required: false
+        type: boolean
+        default: false
+      bypass_module_check:
         required: false
         type: boolean
         default: false
@@ -110,7 +123,7 @@ on:
         type: string
         default: "off"
       called_from_main:
-        description: "是否从 main.yml 调用（内部使用）"
+        description: "Called from main.yml (internal)"
         required: false
         type: boolean
         default: false
@@ -204,11 +217,13 @@ jobs:
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       use_rekernel: ${{ inputs.use_rekernel || false }}
+      enable_bbrv3: ${{ inputs.enable_bbrv3 || false }}
+      bypass_module_check: ${{ inputs.bypass_module_check || false }}
       supp_op: false
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
 
-  # 仅在直接触发时运行，从 main.yml 调用时跳过
+  # Only run when triggered directly; skipped when called from main.yml
   get-ksu-manager:
     if: ${{ !inputs.called_from_main }}
     uses: ./.github/workflows/get-manager.yml

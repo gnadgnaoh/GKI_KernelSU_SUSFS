@@ -2,7 +2,7 @@ name: Update Data & Deploy Pages
 
 on:
   schedule:
-    - cron: '0 8 */3 * *'  # 每 3 天 UTC 8:00
+    - cron: '0 8 */3 * *'  # Every 3 days at 08:00 UTC
   workflow_dispatch:
   push:
     branches: [dev]
@@ -58,7 +58,7 @@ jobs:
           fi
 
   deploy-pages:
-    if: ${{ github.repository == 'zzh20188/GKI_KernelSU_SUSFS' }}
+    if: ${{ github.repository == 'hzzmonetvn/GKI_KernelSU_SUSFS' }}
     needs: update-data
     runs-on: ubuntu-latest
     environment:
@@ -75,7 +75,7 @@ jobs:
       - name: Copy data to web directory
         run: cp -r data/ web/data/
 
-      # 构建前端资源（webpack 打包 JS/SCSS → dist/）
+      # Build frontend assets (webpack bundles JS/SCSS to dist/)
       - uses: actions/setup-node@v4
         with:
           node-version: '20'

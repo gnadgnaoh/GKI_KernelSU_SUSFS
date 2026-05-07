@@ -1,4 +1,4 @@
-name: Android 内核构建-自定义
+name: Custom Android Kernel Build
 
 permissions:
   contents: write
@@ -7,9 +7,8 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      # ==================== 内核版本配置 ====================
       android_version:
-        description: "Android 版本"
+        description: "Android version"
         required: true
         type: choice
         options:
@@ -20,7 +19,7 @@ on:
           - android16
         default: android12
       kernel_version:
-        description: "内核版本"
+        description: "Kernel version"
         required: true
         type: choice
         options:
@@ -31,65 +30,92 @@ on:
           - "6.12"
         default: "5.10"
       sub_level:
-        description: "子版本号 (如 66, 198, X)"
+        description: "Sublevel (for example 66, 198, X)"
         required: true
         type: string
         default: "66"
       os_patch_level:
-        description: "安全补丁级别 (如 2022-01, lts)"
+        description: "Security patch level (for example 2022-01, lts)"
         required: true
         type: string
         default: "2022-01"
       revision:
-        description: "修订版本 (如 r11, 仅 5.10 需要)"
+        description: "Revision (for example r11, only required for 5.10)"
         required: false
         type: string
         default: "r11"
 
-      # ==================== KernelSU 配置 ====================
       kernelsu_variant:
-        description: "KernelSU 变体"
+        description: "KernelSU variant"
         required: true
         type: choice
         options:
           - Official
-          #- Next
           - SukiSU
           - ReSukiSU
         default: ReSukiSU
       kernelsu_branch:
-        description: "KSU 分支"
+        description: "KSU branch"
         required: true
         type: choice
         options:
-          - Stable(标准)
-          - Dev(开发)
-          - Other(其他/指定)
-        default: Stable(标准)
+          - Stable
+          - Dev
+          - Other
+        default: Stable
 
-      # ==================== 可选配置 ====================
       version:
-        description: "自定义版本名 (可选)"
+        description: "Custom version name (optional)"
         required: false
         type: string
       build_time:
-        description: "自定义构建时间 (可选，N或留空=当前UTC)"
+        description: "Custom build time (optional, N or empty = current UTC)"
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
 
-      # ==================== 选项配置 ====================
-      use_kpm:
-        description: "KPM 功能（patched 尚不支持）"
+      use_zram:
+        description: "Enable ZRAM enhanced algorithm"
         required: true
-        type: choice
-        default: "disabled (关闭)"
-        options:
-          - "disabled (关闭)"
-          - "enabled (开启)"
-          - "patched (开启并修补，尚不支持)"
+        type: boolean
+        default: false
+      use_bbg:
+        description: "Enable BBG anti-brick protection"
+        required: true
+        type: boolean
+        default: false
+      use_kpm:
+        description: "Enable KPM feature"
+        required: true
+        type: boolean
+        default: false
+      use_rekernel:
+        description: "Enable Re-Kernel driver"
+        required: false
+        type: boolean
+        default: false
+      enable_bbrv3:
+        description: "Enable BBRv3 source patch and networking config"
+        required: false
+        type: boolean
+        default: false
+      bypass_module_check:
+        description: "Bypass module version check"
+        required: false
+        type: boolean
+        default: false
+      cancel_susfs:
+        description: "Disable SUSFS"
+        required: true
+        type: boolean
+        default: false
+      supp_op:
+        description: "Enable OnePlus 8E support"
+        required: false
+        type: boolean
+        default: false
       droidspaces:
-        description: "Droidspaces 容器支持 (5.10~6.6: 槽位补丁, 6.12: 开/关)"
+        description: "Droidspaces container support (5.10~6.6: slot patch, 6.12: on/off)"
         required: false
         type: choice
         options:
@@ -98,33 +124,6 @@ on:
           - "123"
           - "345"
         default: "off"
-
-      # ==================== 功能开关 ====================
-      use_zram:
-        description: "启用 ZRAM 增强算法"
-        required: true
-        type: boolean
-        default: false
-      use_bbg:
-        description: "启用 BBG 防格机"
-        required: true
-        type: boolean
-        default: false
-      use_rekernel:
-        description: "启用 Re-Kernel 驱动"
-        required: false
-        type: boolean
-        default: false
-      cancel_susfs:
-        description: "禁用 SUSFS"
-        required: true
-        type: boolean
-        default: false
-      supp_op:
-        description: "启用一加 8E 支持"
-        required: false
-        type: boolean
-        default: false
 
 jobs:
   build-custom-kernel:
@@ -145,6 +144,8 @@ jobs:
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       use_rekernel: ${{ inputs.use_rekernel || false }}
+      enable_bbrv3: ${{ inputs.enable_bbrv3 || false }}
+      bypass_module_check: ${{ inputs.bypass_module_check || false }}
       supp_op: ${{ inputs.supp_op || false }}
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
