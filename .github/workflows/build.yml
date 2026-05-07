@@ -204,6 +204,7 @@ jobs:
 
       - name: Generate signing key
         run: |
+          mkdir -p "$(dirname "$BOOT_SIGN_KEY_PATH")"
           openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 > $BOOT_SIGN_KEY_PATH
 
       - name: Configure Git
